@@ -4,8 +4,7 @@ from cfg import form_blocks
 
 SIDE_EFFECTS = ('ret', 'call', 'print', 'jmp', 'br')
 
-def dce_naive():
-    prog = json.load(sys.stdin)
+def dce_trivial(prog):
     for func in prog['functions']:
         instrs = func['instrs']
         blocks = form_blocks(instrs)
@@ -26,7 +25,8 @@ def dce_naive():
                         elif instr['op'] not in SIDE_EFFECTS:
                             block.pop(idx) # Remove this instruction
         func['instrs'] = [instr for block in blocks for instr in block]
-    json.dump(prog, sys.stdout, indent=2, sort_keys=True)
 
 if __name__ == '__main__':
-    dce_naive()
+    prog = json.load(sys.stdin)
+    dce_trivial(prog)
+    json.dump(prog, sys.stdout, indent=2, sort_keys=True)

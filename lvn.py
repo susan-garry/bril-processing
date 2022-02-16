@@ -5,26 +5,28 @@ from cfg import cfg
 from rename_vars import VarGen
 from dce_trivial import dce_trivial
 
-def lvn(prog):
+def subexpr_elim(prog):
   for func in prog['functions']:
     blocks, _, _ = cfg(func)
     old2new = {} # map old variable names to new variable names
     var_gen = VarGen()
     for block in blocks:
       table = {} # var -> (subexpr, cannonical_var)
-      working_set = set() # set of all vars used later in the block
+      working_set = set() # set of all vars reused later in the block
       for instr in reversed(block):
         if 'dest' in instr:
           if instr['dest'] in working_set:
             dest = var_gen.next()
             instr['dest'] = dest
+            working_set.add(dest)
+          if 'args' in instr:
+            working_set.difference_update(set(instr['args']))
       for instr in block:
         if 'args' in instr:
           #map 'args' to cannonical variables, inelegantly
           instr['args'] = [table.get(arg, ["", arg])[1] for arg in instr['args']]
         if 'dest' in instr:
           dest = instr['dest']
-          working_set.add(instr['dest'])
           # check if subexpr is in the table
           subexpr = const_fold(instr, table)
           for _, val in table.items():
@@ -49,5 +51,5 @@ def const_fold(instr, table):
     
 if __name__ == "__main__":
   prog = json.load(sys.stdin)
-  lvn(prog)
+  subexpr_elim(prog)
   json.dump(prog, sys.stdout, indent=2, sort_keys=True)
