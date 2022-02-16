@@ -1,0 +1,7 @@
+@main {
+  a: int = const 2;
+  print a;
+}
+@func2 {
+  a: int = const 1;
+}

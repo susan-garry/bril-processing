@@ -1,0 +1,6 @@
+@main {
+  a: int = const 2;
+  print a;
+}
+@func2 {
+}
