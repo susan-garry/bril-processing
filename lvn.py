@@ -35,7 +35,7 @@ def subexpr_elim(prog):
               instr['op'] = 'id'
               instr['args'] = [val[1]]
               break
-          if dest not in table:
+          if dest not in table or table[dest][0] != subexpr:
             table[dest] = (subexpr, dest)
   return prog
 
