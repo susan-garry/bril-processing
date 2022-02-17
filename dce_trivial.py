@@ -2,31 +2,46 @@ import json
 import sys
 from cfg import form_blocks
 
-SIDE_EFFECTS = ('ret', 'call', 'print', 'jmp', 'br')
-
 def dce_trivial(prog):
+    changed = False
     for func in prog['functions']:
-        instrs = func['instrs']
-        blocks = form_blocks(instrs)
-        global_working_set = set() # vars needed later in the function
-        for block in reversed(blocks):
-            local_working_set = global_working_set.copy() # variables that may be needed from earlier in this block
-            for idx in reversed(range(len(block))):
-                instr = block[idx]
-                if 'op' in instr: # Not a label
-                    if instr['op'] in SIDE_EFFECTS: # Add dependencies to working sets
-                        global_working_set.update(instr.get('args', []))
-                        local_working_set.update(instr.get('args', []))
-                    if 'dest' in instr: # Assigns to a variable
-                        if instr['dest'] in local_working_set: # If the var may be needed
-                            global_working_set.update(instr.get('args', []))
-                            local_working_set.remove(instr['dest'])
-                            local_working_set.update(instr.get('args', []))
-                        elif instr['op'] not in SIDE_EFFECTS:
-                            block.pop(idx) # Remove this instruction
-        func['instrs'] = [instr for block in blocks for instr in block]
+        blocks = form_blocks(func['instrs'])
+        # perform local dead code elimination
+        for i in range(len(blocks)):
+            block = blocks[i]
+            last_def = {}
+            new_block = []
+            for instr in block:
+                #check for uses
+                if 'args' in instr:
+                    for arg in instr['args']: last_def.pop(arg, None)
+                if 'dest' in instr:
+                    if instr['dest'] not in last_def:
+                        new_block.append(instr)
+                    else:
+                        changed = True
+                    last_def[instr['dest']] = i
+                else:
+                    new_block.append(instr)
+            blocks[i] = new_block
+        # perform global dead code elimination
+        # get a list of all used variables
+        used = set()
+        for block in blocks:
+            for instr in block:
+                if 'args' in instr: used.update(instr['args'])
+        instrs = []
+        for block in blocks:
+            for instr in block:
+                if 'dest' not in instr or instr['dest'] in used:
+                    instrs.append(instr)
+                else:
+                    changed = True
+        func['instrs'] = instrs
+    return changed
 
 if __name__ == '__main__':
     prog = json.load(sys.stdin)
-    dce_trivial(prog)
+    while dce_trivial(prog):
+        pass
     json.dump(prog, sys.stdout, indent=2, sort_keys=True)

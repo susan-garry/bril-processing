@@ -1,0 +1,8 @@
+@main {
+  jmp .first;
+.last:
+  print a;
+.first:
+  a: int = const 0;
+  jmp .last;
+}
