@@ -30,9 +30,9 @@ def label_blocks(blocks):
 
 def get_preds(lbl2succ):
     lbl2pred = {} # label -> list of labels of predecessors
+    for lbl in lbl2succ.keys(): lbl2pred[lbl] = []
     for node, succrs in lbl2succ.items():
         for succ in succrs:
-            lbl2pred[succ] = lbl2pred.get(succ, [])
             lbl2pred[succ].append(node)
     return lbl2pred
 
@@ -40,18 +40,19 @@ def cfg(func):
     blocks = form_blocks(func['instrs'])
     lbl2block = label_blocks(blocks)
     # build cfg
-    cfg = {} # label -> list of labels of successive blocks
+    lbl2succ = {} # label -> list of labels of successive blocks
     for i in range(len(blocks)):
         last = blocks[i][-1]
         label = blocks[i][0]['label']
         if last['op'] in ['jmp', 'br']:
-            cfg[label] = last['labels']
+            lbl2succ[label] = last['labels']
         else:
             if i < len(blocks) - 1:
-                cfg[label] = blocks[i+1][0]['label']
+                lbl2succ[label] = [blocks[i+1][0]['label']]
             else:
-                cfg[label] = []
-    return blocks, lbl2block, cfg
+                lbl2succ[label] = []
+    lbl2pred = get_preds(lbl2succ)
+    return blocks, lbl2block, lbl2pred, lbl2succ
 
 if __name__ == '__main__':
     prog = json.load(sys.stdin)

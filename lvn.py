@@ -7,12 +7,12 @@ from dce_trivial import dce_trivial
 
 def subexpr_elim(prog):
   for func in prog['functions']:
-    blocks, _, _ = cfg(func)
-    old2new = {} # map old variable names to new variable names
+    blocks = cfg(func)[0]
+    # old2new = {} # map old variable names to new variable names
     var_gen = VarGen()
     for block in blocks:
       table = {} # var -> (subexpr, cannonical_var)
-      working_set = set() # set of all vars reused later in the block
+      working_set = set() # set of all vars clobbered later in the block
       for instr in reversed(block):
         if 'dest' in instr:
           if instr['dest'] in working_set:
@@ -45,7 +45,7 @@ def const_fold(instr, table):
   if instr['op'] == 'const':
     return (op, instr['value'])
   else:
-    # don't implement constant folding yet; just return the subexpr
+    # constant folding not yet implemented
     return (op, instr['args'].sort())
   
     
