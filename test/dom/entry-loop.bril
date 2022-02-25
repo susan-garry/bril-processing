@@ -1,0 +1,8 @@
+# ARGS: test
+
+@main {
+  .header:
+    jmp .exit;
+  .exit:
+    jmp .header;
+}

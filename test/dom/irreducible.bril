@@ -1,0 +1,10 @@
+# ARGS: test
+
+@main {
+  .header:
+    jmp .loop1;
+  .loop1:
+    jmp .loop2;
+  .loop2:
+    jmp .loop1;
+}

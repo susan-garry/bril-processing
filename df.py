@@ -1,12 +1,12 @@
 import argparse
 import json
 import sys
-from cfg import cfg, get_preds
+from cfg import cfg
 from briltxt import instr_to_string
 
-class DataFlow :
+class Dataflow :
 
-  def __init__(self, init, direction, meet, transfer, printer="default"):
+  def __init__(self, init, direction, meet, transfer):
     self.init = init
     self.direction = direction
     self.meet = meet
@@ -15,7 +15,7 @@ class DataFlow :
       self.printer = printer
 
   def df(self, cfg):
-    blocks, lbl2block, lbl2pred, lbl2succ = cfg
+    _, lbl2block, lbl2pred, lbl2succ = cfg
     analysis = {} # label -> (in, out)
     if self.direction == "FORWARD":
       preds = lbl2pred
@@ -50,15 +50,17 @@ class DataFlow :
     if self.direction == "BACKWARD":
       for lbl, output in analysis.items():
         analysis[lbl] = (output[1], output[0])
-    self.printer(blocks, analysis)
+    return analysis
 
-  def printer(self, blocks, analysis):
-    lbls = [block[0]['label'] for block in blocks]
-    for lbl in lbls:
-      data = analysis[lbl]
-      print("  ", lbl)
-      print("    in: ", data[0])
-      print("    out: ", data[1])
+
+def printer(blocks, analysis):
+  lbls = [block[0]['label'] for block in blocks]
+  for lbl in lbls:
+    data = analysis[lbl]
+    print("  ", lbl)
+    print("    in: ", data[0])
+    print("    out: ", data[1])
+
 
 def reaching_defs(cfg):
 
@@ -84,25 +86,28 @@ def reaching_defs(cfg):
   def printer(blocks, analysis):
     lbls = [block[0]['label'] for block in blocks]
     for lbl in lbls:
-      data = analysis[lbl]
+      in_, out_ = analysis[lbl]
       print("  block:", lbl)
-      inb = [instr for instrs in data[0].values() for instr in instrs]
+      inb = [instr for instrs in in_.values() for instr in instrs]
       print("    in: ")
       for instr in inb:
         print('      {}'.format(instr_to_string(instr)))
-      outb = [instr for instrs in data[1].values() for instr in instrs]
+      outb = [instr for instrs in out_.values() for instr in instrs]
       print("    out: ")
       for instr in outb:
         print('      {}'.format(instr_to_string(instr)))
 
-  solver = DataFlow(dict(), "FORWARD", meet, transfer, printer)
-  solver.df(cfg)
+  solver = Dataflow(dict(), "FORWARD", meet, transfer)
+  defs = solver.df(cfg)
+  printer(cfg[0], defs)
 
 if __name__ == "__main__":
-  # arg_parser = argparse.ArgumentParser()
-  # arg_parser.add_argument()
+  analysis = sys.argv[1]
   prog = json.load(sys.stdin)
-  for func in prog['functions']:
-    print(func['name'], ":")
-    func_cfg = cfg(func)
-    reaching_defs(func_cfg)
+  if analysis == "reaching":
+    for func in prog['functions']:
+      print(func['name'], ":")
+      func_cfg = cfg(func)
+      reaching_defs(func_cfg)
+  else:
+    print("Not a valid argument")
