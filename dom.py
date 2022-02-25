@@ -61,7 +61,6 @@ def graphviz_printer(name, graph):
 def get_dom_frontier(cfg):
   lbl2succ = cfg[3]
   dominated2dominator = get_dom(cfg)
-
   # Compute the set of all blocks that A dominates.
   dominator2dominated = {lbl:set() for lbl in dominated2dominator}
   for dominated, dominators in dominated2dominator.items():
@@ -69,7 +68,7 @@ def get_dom_frontier(cfg):
       dominator2dominated[dominator].add(dominated)
   # Remove the reflexive property of the dominator relation
   for lbl, dominated in dominator2dominated.items(): dominated.remove(lbl)
-  frontier = {lbl:set() for lbl in dominators}
+  frontier = {lbl:set() for lbl in dominator2dominated}
 
   # for block that A dominatores, add succ[block] - dom[A] to A's domination frontier
   for dominator, dominated in dominator2dominated.items():
