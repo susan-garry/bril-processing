@@ -7,23 +7,21 @@ def dce_trivial(prog):
     for func in prog['functions']:
         blocks = form_blocks(func['instrs'])
         # perform local dead code elimination
-        for i in range(len(blocks)):
-            block = blocks[i]
-            last_def = {}
-            new_block = []
-            for instr in block:
+        for block in blocks:
+            last_def = {} # var -> index where var was last defined if not used
+            dead = set() # indices of all dead instructions
+            for i in range(len(block)):
+                instr = block[i]
                 #check for uses
                 if 'args' in instr:
                     for arg in instr['args']: last_def.pop(arg, None)
                 if 'dest' in instr:
-                    if instr['dest'] not in last_def:
-                        new_block.append(instr)
-                    else:
+                    dest = instr['dest']
+                    if dest in last_def: # if the previous definition was not used:
+                        dead.add(last_def[dest])
                         changed = True
                     last_def[instr['dest']] = i
-                else:
-                    new_block.append(instr)
-            blocks[i] = new_block
+            for i in dead: del block[i]
         # perform global dead code elimination
         # get a list of all used variables
         used = set()
