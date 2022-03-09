@@ -1,0 +1,55 @@
+main :
+  block: block0
+    in: 
+    out: 
+      result: int = const 1
+      i: int = const 8
+  block: header
+    in: 
+      result: int = const 1
+      result: int = mul result i
+      i: int = const 8
+      i: int = sub i one
+      zero: int = const 0
+      cond: bool = gt i zero
+      one: int = const 1
+    out: 
+      result: int = const 1
+      result: int = mul result i
+      i: int = const 8
+      i: int = sub i one
+      zero: int = const 0
+      cond: bool = gt i zero
+      one: int = const 1
+  block: body
+    in: 
+      result: int = const 1
+      result: int = mul result i
+      i: int = const 8
+      i: int = sub i one
+      zero: int = const 0
+      cond: bool = gt i zero
+      one: int = const 1
+    out: 
+      result: int = mul result i
+      i: int = sub i one
+      zero: int = const 0
+      cond: bool = gt i zero
+      one: int = const 1
+  block: end
+    in: 
+      result: int = const 1
+      result: int = mul result i
+      i: int = const 8
+      i: int = sub i one
+      zero: int = const 0
+      cond: bool = gt i zero
+      one: int = const 1
+    out: 
+      result: int = const 1
+      result: int = mul result i
+      i: int = const 8
+      i: int = sub i one
+      zero: int = const 0
+      cond: bool = gt i zero
+      one: int = const 1

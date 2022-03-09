@@ -1,4 +1,4 @@
-# ARGS: frontier
+# ARGS: reaching
 
 @main {
   result: int = const 1;

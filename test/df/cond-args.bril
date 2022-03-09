@@ -1,4 +1,4 @@
-# ARGS: tree
+# ARGS: reaching
 
 @main(cond: bool) {
   a: int = const 47;

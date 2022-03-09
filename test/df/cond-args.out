@@ -1,0 +1,38 @@
+main :
+  block: block0
+    in: 
+    out: 
+      a: int = const 47
+      b: int = const 42
+  block: left
+    in: 
+      a: int = const 47
+      b: int = const 42
+    out: 
+      a: int = const 47
+      b: int = const 1
+      c: int = const 5
+  block: right
+    in: 
+      a: int = const 47
+      b: int = const 42
+    out: 
+      a: int = const 2
+      b: int = const 42
+      c: int = const 10
+  block: end
+    in: 
+      a: int = const 47
+      a: int = const 2
+      b: int = const 1
+      b: int = const 42
+      c: int = const 5
+      c: int = const 10
+    out: 
+      a: int = const 47
+      a: int = const 2
+      b: int = const 1
+      b: int = const 42
+      c: int = const 5
+      c: int = const 10
+      d: int = sub a c

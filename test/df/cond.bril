@@ -1,8 +1,9 @@
-# ARGS: tree
+# ARGS: reaching
 
-@main(cond: bool) {
+@main {
   a: int = const 47;
   b: int = const 42;
+  cond: bool = const true;
   br cond .left .right;
 .left:
   b: int = const 1;
