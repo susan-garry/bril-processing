@@ -36,8 +36,8 @@ def get_preds(lbl2succ):
             lbl2pred[succ].append(node)
     return lbl2pred
 
-def cfg(func):
-    blocks = form_blocks(func['instrs'])
+def cfg(body):
+    blocks = form_blocks(body)
     lbl2block = label_blocks(blocks)
     # build cfg
     lbl2succ = {} # label -> list of labels of successive blocks
@@ -57,7 +57,7 @@ def cfg(func):
 if __name__ == '__main__':
     prog = json.load(sys.stdin)
     for func in prog['functions']:
-        blocks, lbl2block, lbl2succ = cfg(func)
+        blocks, lbl2block, lbl2succ = cfg(func['instrs'])
     # for block in blocks:
     #     print(block)
     # for node, succ in lbl2succ.items():

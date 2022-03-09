@@ -23,12 +23,9 @@ def get_dom(cfg):
     changed = False
     for block in blocks[1:]:
       label = block[0]['label']
-      # print("block: ", label)
       doms = intersection([dom.get(lbl, set()) for lbl in lbl2pred[label]])
       doms.add(label)
-      # print("old doms: ", dom.get(label))
       if doms != dom.get(label):
-        # print("new doms: ", doms)
         changed = True
         dom[label] = doms
   return dom
@@ -56,21 +53,26 @@ def graphviz_printer(name, graph):
       print('  {} -> {};'.format(node, succ))
   print('}')
 
-# Returns a dictionary that maps a label to all of the (labels of) blocks in its
-# dominance frontier
-def get_dom_frontier(cfg):
-  lbl2succ = cfg[3]
+# Like get_dom, but instead of mapping blocks to their dominators,
+# map blocks to the list of all blocks that they dominate
+# Not reflexive
+def get_dominators2dominated(cfg):
   dominated2dominator = get_dom(cfg)
   # Compute the set of all blocks that A dominates.
   dominator2dominated = {lbl:set() for lbl in dominated2dominator}
   for dominated, dominators in dominated2dominator.items():
     for dominator in dominators:
       dominator2dominated[dominator].add(dominated)
-  # Remove the reflexive property of the dominator relation
-  for lbl, dominated in dominator2dominated.items(): dominated.remove(lbl)
+  return dominator2dominated
+
+# Returns a dictionary that maps a label to all of the (labels of) blocks in its
+# dominance frontier
+def get_dom_frontier(cfg):
+  lbl2succ = cfg[3]
+  dominator2dominated = get_dominators2dominated(cfg)
   frontier = {lbl:set() for lbl in dominator2dominated}
 
-  # for block that A dominatores, add succ[block] - dom[A] to A's domination frontier
+  # for block that A dominates, add succ[block] - dom[A] to A's domination frontier
   for dominator, dominated in dominator2dominated.items():
     for block in dominated:
       frontier[dominator].update(set(lbl2succ[block]) - dominated)
@@ -117,19 +119,19 @@ if __name__ == "__main__":
   analysis = sys.argv[1]
   if analysis == "dom":
     for func in prog['functions']:
-      func_cfg = cfg(func)
+      func_cfg = cfg(func['instrs'])
       printer(get_dom(func_cfg))
   elif analysis == "tree":
     for func in prog['functions']:
-      func_cfg = cfg(func)
+      func_cfg = cfg(func['instrs'])
       printer(get_dom_tree(func_cfg))
   elif analysis == "frontier":
     for func in prog['functions']:
-      func_cfg = cfg(func)
+      func_cfg = cfg(func['instrs'])
       printer(get_dom_frontier(func_cfg))
   elif analysis == "test":
     for func in prog['functions']:
-      func_cfg = cfg(func)
+      func_cfg = cfg(func['instrs'])
       assert get_dominators_by_path(func_cfg) == get_dom(func_cfg)
   else:
     print("Command not recognized")
