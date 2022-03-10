@@ -58,7 +58,7 @@ def graphviz_printer(name, graph):
       print('  {} -> {};'.format(node, succ))
   print('}')
 
-# Like get_dom_tree, but map every block to the list of blocks that they dominate, except itself
+# Like get_dom_tree, but map every block to the list of blocks that they dominate
 def get_dominators2dominated(cfg):
   dominated2dominator = get_dom(cfg)
   # Compute the set of all blocks that A dominates.
@@ -66,8 +66,6 @@ def get_dominators2dominated(cfg):
   for dominated, dominators in dominated2dominator.items():
     for dominator in dominators:
       dominator2dominated[dominator].add(dominated)
-  for dominator, dominated in dominator2dominated.items():
-    dominated.remove(dominator)
   return dominator2dominated
 
 # Returns a dictionary that maps a label to all of the (labels of) blocks in its
@@ -75,12 +73,14 @@ def get_dominators2dominated(cfg):
 def get_dom_frontier(cfg):
   lbl2succ = cfg[3]
   dominator2dominated = get_dominators2dominated(cfg)
+  # Maps a label to the set of labels (of blocks) strictly dominated by label
+  strictly_dom = {dominator:(dominated - {dominator}) for dominator, dominated in dominator2dominated.items()}
   frontier = {lbl:set() for lbl in dominator2dominated}
 
-  # for block that A dominates, add succ[block] - dom[A] to A's domination frontier
+  # for block that A dominates, add succ[block] - strictly_dom[A] to A's domination frontier
   for dominator, dominated in dominator2dominated.items():
     for block in dominated:
-      frontier[dominator].update(set(lbl2succ[block]) - dominated)
+      frontier[dominator].update(set(lbl2succ[block]) - strictly_dom[dominator])
   return frontier
 
 # Convert a dictionary to a list of tuples, where

@@ -1,1 +1,1 @@
-[('block0', []), ('body', []), ('end', []), ('header', ['header'])]
+[('block0', []), ('body', ['header']), ('end', []), ('header', ['header'])]
