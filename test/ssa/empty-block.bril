@@ -1,0 +1,12 @@
+# ARGS: 4
+
+@main(n: int) {
+	zero: int = const 0;
+	cond: bool = eq n zero;
+	br cond .end .rec;
+.rec:
+	two: int = const 2;
+	v1: int = div n two;
+	print v1;
+.end:
+}

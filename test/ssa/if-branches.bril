@@ -1,0 +1,13 @@
+# ARGS: true
+
+@main(input:bool) {
+  x: int = const 0;
+  br input .ift .iff;
+.ift:
+  x: int = const 1;
+  jmp .end;
+.iff:
+  x: int = const 2;
+.end:
+  print x;
+}
