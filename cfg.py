@@ -44,12 +44,17 @@ def cfg(body):
     for i in range(len(blocks)):
         last = blocks[i][-1]
         label = blocks[i][0]['label']
-        if last['op'] in ['jmp', 'br']:
-            lbl2succ[label] = last['labels']
-        elif last['op'] == 'ret' or i == len(blocks) -1:
-            lbl2succ[label] = []
-        else:
+        if 'op' in last:
+            if last['op'] in ['jmp', 'br']:
+                lbl2succ[label] = last['labels']
+            elif last['op'] == 'ret' or i == len(blocks) - 1:
+                lbl2succ[label] = []
+            else:
+                lbl2succ[label] = [blocks[i+1][0]['label']]
+        elif i < len(blocks) - 1:
             lbl2succ[label] = [blocks[i+1][0]['label']]
+        else:
+            lbl2succ[label] = []
     lbl2pred = get_preds(lbl2succ)
     return blocks, lbl2block, lbl2pred, lbl2succ
 

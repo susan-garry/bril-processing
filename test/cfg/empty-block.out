@@ -1,0 +1,5 @@
+{'block0': ['end', 'rec'], 'rec': ['end'], 'end': []}
+func:  main
+  block0: ['end', 'rec']
+  rec: ['end']
+  end: []
