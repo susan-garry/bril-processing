@@ -5,6 +5,8 @@ from collections import deque
 from cfg import cfg
 from dom import *
 
+CONTROL = ('jmp', 'br', 'ret')
+
 class VarGen:
     num_vars = 0
     @classmethod
@@ -13,9 +15,9 @@ class VarGen:
         return "v{}".format(cls.num_vars)
 
 # TODO: Test this first
-def get_defs(cfg):
+def get_defs(graph):
     defs = {}
-    for block in cfg[0]:
+    for block in graph[0]:
         for instr in block:
             if 'dest' in instr:
                 dest = instr['dest']
@@ -23,12 +25,30 @@ def get_defs(cfg):
                 defs[(dest, typ)] = defs.get((dest, typ), []) + [block[0]['label']]
     return defs
 
-def insert_phi(cfg):
-    lbl2block = cfg[1]
-    dom_frontier = get_dom_frontier(cfg)
-    # print("dom frontier: ", dom_frontier)
+def insert_phi(func):
+
+    # Add a preheader block for any arguments in the function
+    if 'args' in func:
+        preheader = [{'label': 'preheader'}]
+        for arg in func.get('args', []):
+            move_arg = {
+                'dest': arg['name'],
+                'type': arg['type'],
+                'op': 'id',
+                'args': [arg['name']]
+            }
+            preheader.append(move_arg)
+        while preheader: 
+            func['instrs'].insert(0, preheader.pop())
+
+    graph = cfg(func['instrs'])
+    lbl2block = graph[1]
+    dom_frontier = get_dom_frontier(graph)
     block2phi = {} # label -> the set of variables for which phi nodes have already been inserted
-    for (var, typ), defs in get_defs(cfg).items():
+
+
+    # Add phi nodes to the graph
+    for (var, typ), defs in get_defs(graph).items():
         for def_block in defs:
             frontier = dom_frontier[def_block].copy()
             while frontier:
@@ -40,26 +60,30 @@ def insert_phi(cfg):
                         'type' : typ,
                         'op' : 'phi',
                         'args' : [],
-                        'labels': []
+                        'labels': [],
+                        'var': var
                     }
                     block.insert(1, phi)
                     block2phi[frontier_block] = block2phi.get(frontier_block, set()).union({var})
                     frontier.update(dom_frontier[frontier_block])
+    return graph
 
-def rename(cfg):
-    _, lbl2block, _, lbl2succ = cfg
-    new_vars = {var:deque() for var, _ in get_defs(cfg)} # var -> stack of vars
+def rename(graph):
+    _, lbl2block, _, lbl2succ = graph
+    new_vars = {var:deque() for var, _ in get_defs(graph)} # var -> stack of vars
     renamed = set()
-    dominator2dominated = get_dominators2dominated(cfg)
-    # print(dominator2dominated)
+    immediate_doms = get_dom_tree(graph)
+    # print("defs: ", get_defs(graph))
+
+    # Rename all of the blocks rooted at [label]
     def rename_block(label):
         if label not in renamed:
             renames = {} # var -> number of times the variable was renamed in this block
             block = lbl2block[label]
             for instr in block:
                 # Replace args with their new name
-                if 'args' in instr and 'phi' not in instr:
-                    instr['args'] = [new_vars[a][-1] if new_vars.get(a) else a for a in instr['args']]
+                if 'args' in instr and instr['op'] != 'phi':
+                    instr['args'] = [new_vars[a][-1] if new_vars[a] else a for a in instr['args']]
                 # Replace the destination with a new name and push it onto the stack
                 if 'dest' in instr:
                     new_dest = VarGen.gen()
@@ -69,58 +93,63 @@ def rename(cfg):
             for succ_lbl in lbl2succ[label]:
                 succ = lbl2block[succ_lbl]
                 i = 1
-                while(succ[i]['op'] == 'phi'):
-                    var = succ[i]['dest']
+                while (i < len(succ) and succ[i]['op'] == 'phi'):
+                    var = succ[i]['var']
                     # print(new_vars)
                     if new_vars[var]:
                         succ[i]['args'].append(new_vars[var][-1])
                         succ[i]['labels'].append(label)
                     i += 1
             renamed.add(label)
-            for b in dominator2dominated[label].intersection(lbl2succ[label]):
+            for b in immediate_doms[label]:
                 rename_block(b)
             for var, n in renames.items():
                 while n > 0:
                     new_vars[var].pop()
                     n -= 1
-    rename_block(cfg[0][0][0]['label'])
 
-def to_ssa(cfg):
-    insert_phi(cfg)
-    rename(cfg)
-    new_body = [i for block in cfg[0] for i in block]
-    return new_body
+    # Recursively rename the program, starting at the root
+    rename_block(graph[0][0][0]['label'])
+    return graph
 
-def from_ssa(cfg):
-    lbl2block = cfg[1]
-    for block in cfg[0]:
-        i = 1
-        while block[i].get('phi'):
-            instr = block[i]
+
+# Convert a func to ssa form, leaving the phi nodes in the transformed graph
+def to_ssa(func):
+    return rename(insert_phi(func))
+
+# Take a control flow graph which has been converted to ssa form,
+# with phi nodes inserted and destinations renamed to be unique,
+# and remove the phi nodes
+def from_ssa(graph):
+    lbl2block = graph[1]
+    for block in graph[0]:
+        while (len(block) > 1 and block[1]['op'] == 'phi'):
+            instr = block.pop(1)
             for (pred, var) in zip(instr['labels'], instr['args']):
+                # print(pred, var)
                 pred = lbl2block[pred]
                 move = {
                     'dest': instr['dest'],
                     'type': instr['type'],
-                    'op': id,
+                    'op': 'id',
                     'args': [var]}
-                pred.add(move)
-            del instr
-    return cfg
+                if pred[-1]['op'] in CONTROL:
+                    pred.insert(-1, move)
+                else: 
+                    pred.append(move)
+    return graph
 
-def ssa(body):
-    # Convert the program to ssa
-    graph = cfg(body)
-    insert_phi(graph)
-    rename(graph)
-    # Convert the program from SSA (remove the phi nodes)
-    from_ssa(graph)
-    return [i for block in graph[0] for i in block] # Flatten the cfg
+# func is a bril functions
+def ssa(func):
+    # Rename variables and return the new instructions
+    return from_ssa(to_ssa(func))
 
 if __name__ == "__main__":
     prog = json.load(sys.stdin)
     for func in prog['functions']:
-        graph = cfg(func['instrs'])
-        # func['instrs'] = to_ssa(graph)
-        func['instrs'] = ssa(func['instrs'])
+        if sys.argv[1] == 'ssa':
+            graph = to_ssa(func)
+        else:
+            graph = ssa(func)
+        func['instrs'] = [i for block in graph[0] for i in block]
     json.dump(prog, sys.stdout, indent=2, sort_keys=True)
