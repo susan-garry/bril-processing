@@ -1,7 +1,7 @@
 import json
 import sys
 
-TERMINATORS = ['jmp', 'br', 'ret']
+CONTROL = ['jmp', 'br', 'ret']
 
 def form_blocks(body):
     blocks = [[]]
@@ -10,7 +10,7 @@ def form_blocks(body):
             blocks.append([i])
         else: #An actual instruction
             blocks[-1].append(i)
-            if i['op'] in TERMINATORS: #A terminator instruction
+            if i['op'] in CONTROL: #A control flow instruction
                 blocks.append([])
     return [block for block in blocks if block != []]
 
@@ -46,19 +46,19 @@ def cfg(body):
         label = blocks[i][0]['label']
         if last['op'] in ['jmp', 'br']:
             lbl2succ[label] = last['labels']
+        elif last['op'] == 'ret' or i == len(blocks) -1:
+            lbl2succ[label] = []
         else:
-            if i < len(blocks) - 1:
-                lbl2succ[label] = [blocks[i+1][0]['label']]
-            else:
-                lbl2succ[label] = []
+            lbl2succ[label] = [blocks[i+1][0]['label']]
     lbl2pred = get_preds(lbl2succ)
     return blocks, lbl2block, lbl2pred, lbl2succ
 
 if __name__ == '__main__':
     prog = json.load(sys.stdin)
     for func in prog['functions']:
-        blocks, lbl2block, lbl2succ = cfg(func['instrs'])
-    # for block in blocks:
-    #     print(block)
-    # for node, succ in lbl2succ.items():
-    #     print("{}: {}".format(node, succ))
+        blocks, lbl2block, lbl2pred, lbl2succ = cfg(func['instrs'])
+        # for block in blocks:
+        #     print(block)
+        print("func: ", func['name'])
+        for node, succ in lbl2succ.items():
+            print("  {}: {}".format(node, succ))

@@ -1,0 +1,15 @@
+@foo: int {
+    cond: int = const true;
+    br cond .left .right;
+  .left:
+    a: int = const 1;
+    ret a;
+  .right:
+    a: int = const 0;
+    ret b;
+}
+
+@main {
+  res: int = call @foo;
+  print res;
+}

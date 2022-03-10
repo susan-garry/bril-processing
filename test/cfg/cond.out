@@ -1,0 +1,4 @@
+block0: ['left', 'right']
+left: ['end']
+right: ['end']
+end: []

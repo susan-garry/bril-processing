@@ -1,0 +1,6 @@
+func:  foo
+  block0: ['left', 'right']
+  left: []
+  right: []
+func:  main
+  block0: []
