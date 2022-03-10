@@ -1,1 +1,1 @@
-[('block0', ['left', 'right']), ('left', []), ('right', [])]
+[('block0', ['end', 'left', 'right']), ('end', []), ('left', []), ('right', [])]

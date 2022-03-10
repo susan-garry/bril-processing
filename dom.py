@@ -30,18 +30,23 @@ def get_dom(cfg):
         dom[label] = doms
   return dom
 
-# Returns a dictionary that maps lbl to the set of all of its successors in the dominance tree
+# Returns a dictionary that maps lbl to the set of all of its children in the dominance tree
 def get_dom_tree(cfg):
-  lbl2pred = cfg[2]
   dominators = get_dom(cfg)
-  tree = dict()
+  tree = {lbl:set() for lbl in dominators}
   for lbl, doms in dominators.items():
-    immediate_doms = doms.intersection(lbl2pred[lbl])
-    if immediate_doms:
-      tree[lbl] = tree.get(lbl, set())
-      for dom in doms.copy().intersection(lbl2pred[lbl]):
-        tree[dom] = tree.get(dom, set())
-        tree[dom].add(lbl)
+    candidates = doms.copy() # Nodes that may immediately dominate lbl
+    candidates.remove(lbl) # Remove reflexive relation
+    # Remove blocks that do not immediately dominator tree until one remains
+    if candidates: # If the block had dominators other than itself
+      doms = list(candidates)
+      while len(candidates) > 1:
+        dom = doms.pop()
+        # If blocks A and B dominate lbl and A dom B,
+        # then A does not immediate dominate lbl
+        candidates.difference_update(dominators[dom] - {dom})
+      idom = candidates.pop()
+      tree[idom].add(lbl)
   return tree
 
 def graphviz_printer(name, graph):
@@ -53,9 +58,7 @@ def graphviz_printer(name, graph):
       print('  {} -> {};'.format(node, succ))
   print('}')
 
-# Like get_dom, but instead of mapping blocks to their dominators,
-# map blocks to the list of all blocks that they dominate
-# Not reflexive
+# Like get_dom_tree, but map every block to the list of blocks that they dominate, except itself
 def get_dominators2dominated(cfg):
   dominated2dominator = get_dom(cfg)
   # Compute the set of all blocks that A dominates.
@@ -63,6 +66,8 @@ def get_dominators2dominated(cfg):
   for dominated, dominators in dominated2dominator.items():
     for dominator in dominators:
       dominator2dominated[dominator].add(dominated)
+  for dominator, dominated in dominator2dominated.items():
+    dominated.remove(dominator)
   return dominator2dominated
 
 # Returns a dictionary that maps a label to all of the (labels of) blocks in its
