@@ -1,0 +1,25 @@
+#ARGS: true false
+@main(cond1: bool, cond2: bool) {
+.block0:
+    zero: int = const 0;
+    one: int = const 1;
+    i: int = const 1;
+.for.cond.1:
+    v3: int = id i;
+    br cond1 .for.body.1 .for.end.1;
+.for.body.1:
+    v6: int = id i;
+    br cond2 .then.7 .else.7;
+.then.7: 
+    jmp .endif.7;
+.else.7:
+    cond1: bool = not cond1;
+#    print zero;
+.endif.7:
+    one: int = const 1;
+    v14: int = id i;
+    i: int = add v14 one;
+    cond2: bool = not cond2;
+    jmp .for.cond.1;
+.for.end.1:
+}

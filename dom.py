@@ -13,8 +13,8 @@ def intersection(sets):
 
 # Returns a dictionary that maps from labels to dominators, the set of all
 # (labels of) blocks which dominate that label
-def get_dom(cfg):
-  blocks, lbl2block, lbl2pred, _ = cfg
+def get_dom(graph):
+  blocks, lbl2block, lbl2pred, _ = graph
   dom = {lbl:{lbl for lbl in lbl2block} for lbl in lbl2block}
   # Dominators of the entry block includes only itself
   dom[blocks[0][0]['label']] = {blocks[0][0]['label']}
