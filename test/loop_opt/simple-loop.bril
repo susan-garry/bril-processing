@@ -1,0 +1,25 @@
+@main {
+    t: bool = const true;
+    call @simpleLoop t;
+}
+@simpleLoop(cond: bool) {
+    i: int = const 0;
+    zero: int = const 0;
+    one: int = const 1;
+    num_iters: int = const 5;
+.while_cond:
+    guard: bool = le i num_iters;
+    br guard .while_body .end;
+.while_body:
+    br cond .then .else;
+.then:
+    print one;
+    jmp .endif;
+.else:
+    print zero;
+    jmp .endif;
+.endif:
+    i: int = add i one;
+    jmp .while_cond;
+.end:
+}

@@ -56,12 +56,13 @@ def cfg(body):
         else:
             lbl2succ[label] = []
     lbl2pred = get_preds(lbl2succ)
-    return blocks, lbl2block, lbl2pred, lbl2succ
+    return {'blocks': blocks, 'lbl2block': lbl2block, 'lbl2pred': lbl2pred, 'lbl2succ': lbl2succ}
 
 if __name__ == '__main__':
     prog = json.load(sys.stdin)
     for func in prog['functions']:
-        blocks, lbl2block, lbl2pred, lbl2succ = cfg(func['instrs'])
+        func_cfg = cfg(func['instrs'])
+        lbl2succ = func_cfg['lbl2succ']
         # for block in blocks:
         #     print(block)
         print("func: ", func['name'])

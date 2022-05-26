@@ -1,0 +1,4 @@
+# command = "bril2json < {filename} | brili -p {args}"
+command = "bril2json < {filename} | python3 ../loop_opt.py all | brili -p {args}"
+# output.out = "-"
+# output.prof = "2"

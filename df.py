@@ -14,17 +14,16 @@ class Dataflow :
     if printer != "default":
       self.printer = printer
 
-  def df(self, cfg):
-    _, lbl2block, lbl2pred, lbl2succ = cfg
+  def df(self, func_cfg):
     analysis = {} # label -> (in, out)
     if self.direction == "FORWARD":
-      preds = lbl2pred
-      succs = lbl2succ
+      preds = func_cfg['lbl2pred']
+      succs = func_cfg['lbl2succ']
     if self.direction == "BACKWARD":
-      preds = lbl2succ
-      succs = lbl2pred
+      preds = func_cfg['lbl2succ']
+      succs = func_cfg['lbl2pred']
     # initialize variables
-    worklist = set(lbl2block.keys())
+    worklist = set(func_cfg['lbl2block'].keys())
     analysis = {} # label -> (in, out)
     for lbl in worklist:
       analysis[lbl] = (None, self.init)
@@ -42,7 +41,7 @@ class Dataflow :
           pred = preds[lbl][i]
           inb = self.meet(inb, analysis[pred][1])
           # print("partial in: ", inb)
-      outb = self.transfer(lbl2block[lbl], inb)
+      outb = self.transfer(func_cfg['lbl2block'][lbl], inb)
       if outb != analysis[lbl][1]:
         worklist.update(succs[lbl])
       analysis[lbl] = (inb.copy(), outb.copy())
@@ -99,7 +98,22 @@ def reaching_defs(cfg):
 
   solver = Dataflow(dict(), "FORWARD", meet, transfer)
   defs = solver.df(cfg)
-  printer(cfg[0], defs)
+  printer(cfg['blocks'], defs)
+
+def live_vars(cfg):
+  def meet(live1, live2): return live1.union(live2)
+
+  def transfer(block, outb):
+    inb = outb.copy()
+    for instr in reversed(block):
+      if 'dest' in instr:
+        inb.discard(instr['dest'])
+      for arg in instr.get('args', []):
+        inb.add(arg)
+    return inb
+  
+  solver = Dataflow(set(), "BACKWARD", meet, transfer)
+  return solver.df(cfg)
 
 if __name__ == "__main__":
   analysis = sys.argv[1]
@@ -107,7 +121,7 @@ if __name__ == "__main__":
   if analysis == "reaching":
     for func in prog['functions']:
       print(func['name'], ":")
-      func_cfg = cfg(func)
+      func_cfg = cfg(func['instrs'])
       reaching_defs(func_cfg)
   else:
     print("Not a valid argument")

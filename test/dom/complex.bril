@@ -1,0 +1,25 @@
+#ARGS: frontier
+@main(cond1: bool, cond2: bool) {
+.block0:
+    zero: int = const 0;
+    one: int = const 1;
+    i: int = const 1;
+.for_cond:
+    v3: int = id i;
+    br cond1 .for_body .for_end;
+.for_body:
+    v6: int = id i;
+    br cond2 .then .else;
+.then: 
+    jmp .endif;
+.else:
+    cond1: bool = not cond1;
+#    print zero;
+.endif:
+    one: int = const 1;
+    v14: int = id i;
+    i: int = add v14 one;
+    cond2: bool = not cond2;
+    jmp .for_cond;
+.for_end:
+}

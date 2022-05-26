@@ -1,0 +1,16 @@
+#ARGS: frontier
+@main {
+.block0:
+    cond1: bool = const false;
+.for_cond:
+    br cond1 .for_body .for_end;
+.for_body:
+    br cond1 .then .else;
+.then: 
+    jmp .endif;
+.else:
+    cond1: bool = not cond1;
+.endif:
+    jmp .for_cond;
+.for_end:
+}

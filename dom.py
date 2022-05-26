@@ -14,7 +14,9 @@ def intersection(sets):
 # Returns a dictionary that maps from labels to dominators, the set of all
 # (labels of) blocks which dominate that label
 def get_dom(graph):
-  blocks, lbl2block, lbl2pred, _ = graph
+  blocks = graph['blocks']
+  lbl2block = graph['lbl2block']
+  lbl2pred = graph['lbl2pred']
   dom = {lbl:{lbl for lbl in lbl2block} for lbl in lbl2block}
   # Dominators of the entry block includes only itself
   dom[blocks[0][0]['label']] = {blocks[0][0]['label']}
@@ -71,7 +73,7 @@ def get_dominators2dominated(cfg):
 # Returns a dictionary that maps a label to all of the (labels of) blocks in its
 # dominance frontier
 def get_dom_frontier(cfg):
-  lbl2succ = cfg[3]
+  lbl2succ = cfg['lbl2succ']
   dominator2dominated = get_dominators2dominated(cfg)
   # Maps a label to the set of labels (of blocks) strictly dominated by label
   strictly_dom = {dominator:(dominated - {dominator}) for dominator, dominated in dominator2dominated.items()}
@@ -97,8 +99,8 @@ def printer(dic):
 
 # Compute the set of a node's dominators as the intersection of all paths which lead to the node
 def get_dominators_by_path(cfg):
-  blocks = cfg[0]
-  lbl2succ = cfg[3]
+  blocks = cfg['blocks']
+  lbl2succ = cfg['lbl2succ']
   dominators = {lbl:[] for lbl in lbl2succ} # lbl -> list of all paths to lbl
   # Compute all unique paths in the cfg
   # keep track of a path, each of which is associated with a node
